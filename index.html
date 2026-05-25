@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NTP Neonatal v4</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5f4f0;--card:#fff;--card2:#f0efe9;
+  --border:#e0ddd5;--border2:#eceae3;
+  --text:#18170f;--text2:#6a6860;--text3:#a0998f;
+  --blue:#1748a0;--blue-bg:#e6eef9;--blue-mid:#3a72d0;
+  --green:#136b36;--green-bg:#e4f3eb;
+  --amber:#7a4a00;--amber-bg:#fef3e0;
+  --red:#8a1818;--red-bg:#fde8e8;
+  --r:10px;--r2:14px;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100vh}
+.wrap{max-width:700px;margin:0 auto;padding:16px 12px 80px}
+header{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+h1{font-size:16px;font-weight:600;letter-spacing:-0.2px}
+.badge{display:inline-block;font-size:9px;font-weight:600;letter-spacing:0.5px;padding:2px 7px;border-radius:20px;background:var(--blue-bg);color:var(--blue);margin-top:3px}
+.sub{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--border2);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.card-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.9px;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--blue-mid);flex-shrink:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+@media(max-width:480px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}.wrap{padding:12px 10px 80px}}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:500;color:var(--text2);display:flex;justify-content:space-between;align-items:center}
+.field label em{font-family:var(--mono);font-size:10px;font-style:normal;color:var(--text3)}
+input[type=number]{
+  width:100%;height:40px;padding:0 10px;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--r);font-family:var(--mono);font-size:14px;color:var(--text);
+  -webkit-appearance:none;appearance:none;transition:border-color .15s,background .15s;
+}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]:focus{outline:none;border-color:var(--blue-mid);background:#fff}
+.hint{font-size:10px;line-height:1.4}
+.hint.ref{color:var(--blue);font-family:var(--mono)}
+.hint.ok{color:var(--green);font-family:var(--mono)}
+.hint.warn{color:var(--amber);font-family:var(--mono)}
+.hint.bad{color:var(--red);font-family:var(--mono)}
+.hint.muted{color:var(--text3)}
+
+/* Franja de día */
+.day-banner{background:var(--blue-bg);border:1px solid #c0d4f0;border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);display:none}
+.day-banner.on{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.day-banner strong{font-weight:600}
+.day-banner .fill-btn{font-size:11px;font-weight:600;padding:5px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-family:var(--font)}
+.day-banner .fill-btn:active{opacity:.8}
+
+.btn{width:100%;height:48px;background:var(--blue);color:#fff;border:none;border-radius:var(--r2);font-family:var(--font);font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{opacity:.82;transform:scale(.99)}
+.btn svg{width:18px;height:18px;flex-shrink:0}
+
+.banner{border-radius:var(--r);padding:12px 14px;margin-top:12px;font-size:13px;line-height:1.6;display:none}
+.banner.on{display:block}
+.banner strong{display:block;font-weight:600;margin-bottom:2px}
+.banner.ok{background:var(--green-bg);color:var(--green)}
+.banner.bad{background:var(--red-bg);color:var(--red)}
+.banner.warn{background:var(--amber-bg);color:var(--amber)}
+
+.results{display:none}.results.on{display:block}
+.sec{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--text2);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border2)}
+.m{background:var(--card2);border-radius:var(--r);padding:11px 12px;min-width:0}
+.m .ml{font-size:10px;font-weight:500;color:var(--text2);margin-bottom:3px}
+.m .mv{font-size:20px;font-weight:500;font-family:var(--mono);line-height:1.1;word-break:break-all}
+.m .mv.ok{color:var(--green)}.m .mv.warn{color:var(--amber)}.m .mv.bad{color:var(--red)}
+.m .ms{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.m .mr{font-size:9px;color:var(--text3);margin-top:3px;font-style:italic;line-height:1.4}
+.osm-card{border-radius:var(--r);padding:14px;border:1px solid transparent}
+.osm-card.periferica{background:var(--green-bg);border-color:#88d4a8;color:var(--green)}
+.osm-card.central{background:var(--blue-bg);border-color:#b8cef0;color:var(--blue)}
+.osm-card.alerta{background:var(--amber-bg);border-color:#f0c878;color:var(--amber)}
+.osm-value{font-size:26px;font-weight:600;font-family:var(--mono)}
+.osm-label{font-size:12px;font-weight:500;margin-top:2px}
+.osm-sub{font-size:11px;margin-top:4px;opacity:.75}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border2)}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:440px}
+th{text-align:left;padding:8px 10px;background:var(--card2);font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:12px;vertical-align:middle}
+td.lc{font-family:var(--font);font-size:12px;font-weight:500}
+tr:last-child td{border-bottom:none}
+tr.tfoot td{background:var(--card2);font-weight:600;border-top:1.5px solid var(--border)}
+.pill{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:var(--font);white-space:nowrap}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.warn{background:var(--amber-bg);color:var(--amber)}
+.pill.bad{background:var(--red-bg);color:var(--red)}
+.refbox{background:var(--blue-bg);border-radius:var(--r);padding:12px 14px;font-size:11px;color:var(--blue);line-height:1.7;margin-top:12px}
+.refbox strong{font-weight:600}
+.foot{font-size:10px;color:var(--text3);margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);font-style:italic;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Calculadora NTP Neonatal <span class="badge">FRESENIUS KABI</span></h1>
+  <div class="sub">Nutrición parenteral en prematuros · ASPEN 2023 — Robinson et al., JPEN 47:830–858</div>
+</header>
+
+<div class="card">
+  <div class="card-title">Datos del paciente</div>
+  <div class="g3">
+    <div class="field">
+      <label>Peso actual <em>gramos</em></label>
+      <input type="number" id="peso" step="1" min="300" max="5000" placeholder="ej: 1950" inputmode="numeric" oninput="onPacienteChange()">
+      <span class="hint muted">Ingresar en gramos</span>
+    </div>
+    <div class="field">
+      <label>EG nacimiento <em>sem</em></label>
+      <input type="number" id="eg" step="1" min="22" max="36" placeholder="28" inputmode="numeric" oninput="onPacienteChange()">
+    </div>
+    <div class="field">
+      <label>Días de vida <em>días</em></label>
+      <input type="number" id="dias" step="1" min="0" max="120" placeholder="0" inputmode="numeric" oninput="onPacienteChange()">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Parámetros nutricionales</div>
+  <!-- Banner de sugerencia por día -->
+  <div id="day_banner" class="day-banner">
+    <span id="day_banner_txt"></span>
+    <button class="fill-btn" onclick="aplicarSugeridos()">Aplicar valores sugeridos</button>
+  </div>
+  <div class="g2">
+    <div class="field">
+      <label>Volumen total <em>ml/kg/día</em></label>
+      <input type="number" id="vol" step="5" min="40" max="200" value="120" inputmode="numeric" oninput="updateHints()">
+      <span class="hint ref" id="h_vol">100–150 ml/kg/día</span>
+    </div>
+    <div class="field">
+      <label>Flujo glucosa <em>mg/kg/min</em></label>
+      <input type="number" id="gir" step="0.5" min="0" max="18" value="8" inputmode="decimal" oninput="updateHints()">
+      <span class="hint ref" id="h_gir">6–12 mg/kg/min</span>
+    </div>
+    <div class="field">
+      <label>Aminoácidos <em>g/kg/día</em></label>
+      <input type="number" id="aa" step="0.1" min="0" max="4" value="2.5" inputmode="decimal" oninput="updateHints()">
+      <span class="hint ref" id="h_aa">ASPEN 2023: 3.0–3.5</span>
+    </div>
+    <div class="field">
+      <label>Lípidos <em>g/kg/día</em></label>
+      <input type="number" id="lip" step="0.1" min="0" max="4" value="2.5" inputmode="decimal" oninput="updateHints()">
+      <span class="hint ref" id="h_lip">ASPEN 2023: hasta 3.0</span>
+    </div>
+    <div class="field">
+      <label>Sodio <em>mEq/kg/día</em></label>
+      <input type="number" id="na" step="0.5" min="0" max="10" value="3" inputmode="decimal" oninput="updateHints()">
+      <span class="hint ref" id="h_na">2–5 mEq/kg/día</span>
+    </div>
+    <div class="field">
+      <label>Potasio <em>mEq/kg/día</em></label>
+      <input type="number" id="k" step="0.5" min="0" max="6" value="2" inputmode="decimal" oninput="updateHints()">
+      <span class="hint ref" id="h_k">1.5–4 mEq/kg/día</span>
+    </div>
+    <div class="field">
+      <label>Calcio <em>mg/kg/día</em></label>
+      <input type="number" id="ca" step="5" min="0" max="120" value="60" inputmode="numeric" oninput="updateHints()">
+      <span class="hint ref" id="h_ca">ASPEN: 60–90 mg/kg/día</span>
+    </div>
+    <div class="field">
+      <label>Fósforo <em>mg/kg/día</em></label>
+      <input type="number" id="p" step="5" min="0" max="100" value="45" inputmode="numeric" oninput="updateHints()">
+      <span class="hint ref" id="h_p">ASPEN: 45–60 mg/kg/día</span>
+    </div>
+  </div>
+</div>
+
+<button class="btn" onclick="calcular()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 7H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+  Calcular NTP
+</button>
+
+<div id="results" class="results">
+  <div id="b_vol_ok"  class="banner ok"></div>
+  <div id="b_vol_bad" class="banner bad"></div>
+  <div id="b_ca_warn" class="banner warn"></div>
+
+  <div class="sec">Osmolaridad estimada</div>
+  <div id="osm_card" class="osm-card">
+    <div class="osm-value" id="osm_val">—</div>
+    <div class="osm-label" id="osm_label">—</div>
+    <div class="osm-sub">Periférica &lt;900 mOsm/L · Central ≥900 mOsm/L</div>
+  </div>
+
+  <div class="sec">Resumen calórico</div>
+  <div class="g4">
+    <div class="m"><div class="ml">Calorías totales</div><div class="mv" id="r_kcal">—</div><div class="ms">kcal/kg/día</div><div class="mr">ASPEN: 90–120</div></div>
+    <div class="m"><div class="ml">Cal. prot / total</div><div class="mv" id="r_ratio">—</div><div class="ms" id="r_ratio_s">—</div><div class="mr">Óptimo: &lt;15%</div></div>
+    <div class="m"><div class="ml">% cal. lípidos</div><div class="mv" id="r_pctlip">—</div><div class="ms">del total</div><div class="mr">Rango: 25–40%</div></div>
+    <div class="m"><div class="ml">Ca:P molar</div><div class="mv" id="r_carp">—</div><div class="ms">mínimo 1:1</div><div class="mr">Ideal ≥1.5:1</div></div>
+  </div>
+
+  <div class="sec">Detalle calórico</div>
+  <div class="g3">
+    <div class="m"><div class="ml">Glucosa</div><div class="mv" id="r_kcal_glu">—</div><div class="ms">kcal/kg/día · 3.4 kcal/g</div><div class="mr">GIR: <span id="r_gir">—</span> mg/kg/min</div></div>
+    <div class="m"><div class="ml">Aminoácidos</div><div class="mv" id="r_kcal_aa">—</div><div class="ms">kcal/kg/día · 4.0 kcal/g</div></div>
+    <div class="m"><div class="ml">Lípidos</div><div class="mv" id="r_kcal_lip">—</div><div class="ms">kcal/kg/día · 9.1 kcal/g</div></div>
+  </div>
+
+  <div class="sec">Volúmenes por componente</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Componente</th><th>Solución</th><th>Dosis</th><th>Vol (ml)</th><th>Estado</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="refbox">
+    <strong>ASPEN 2023 — Robinson et al., JPEN 47:830–858</strong><br>
+    AA: 3.0–3.5 g/kg/día · ILE: hasta 3 g/kg/día · GIR: 6–12 mg/kg/min ·
+    Ca: 60–90 mg/kg/día · P: 45–60 mg/kg/día · Ca:P molar ≥1:1 · Calorías: 90–120 kcal/kg/día<br>
+    <strong>Estabilidad Ca (Fresenius):</strong> Ca máx = 0.60 × Vol (ml/kg/día)<br>
+    <strong>Concentraciones:</strong> Dx 50% · Lípidos 10% · AA 20% · NaCl 20% (3.4 mEq/ml) · KCl (3 mEq/ml) · Gluconato Ca (9.2 mg/ml) · Phocytan (93 mg P/ml) · Vit 3.45 ml/kg · Primer 30 ml fijo
+  </div>
+  <div class="foot">Uso clínico interno NICU · Verificar siempre con neonatólogo tratante</div>
+</div>
+</div>
+
+<script>
+// ── CONSTANTES FRESENIUS ──
+var PRIMER=30.0, C_AA=0.20, C_LIP=0.10, C_DX=0.50;
+var C_NA=3.40, C_K=3.00, C_CA=9.20, C_P=93.0, C_VIT=3.45;
+var CA_MAX_K=0.60;
+
+// ── RANGOS ASPEN 2023 POR DÍAS DE VIDA ──
+// Cada entrada: [dia_desde, dia_hasta, valor_min, valor_max, valor_default]
+var RANGOS = {
+  vol: [[0,1,60,80,70],[2,3,80,100,90],[4,6,100,120,110],[7,999,120,150,130]],
+  gir: [[0,1,4,6,5],[2,3,5,8,6],[4,999,6,12,8]],
+  aa:  [[0,0,1.5,2.0,1.5],[1,2,2.0,2.5,2.0],[3,999,3.0,3.5,3.0]],
+  lip: [[0,1,1.0,2.0,1.0],[2,3,2.0,2.5,2.0],[4,999,2.5,3.0,2.5]],
+  na:  [[0,1,0,0,0],[2,3,1,2,1],[4,999,2,4,3]],
+  k:   [[0,2,0,0,0],[3,999,1,2,1.5]],
+  ca:  [[0,1,30,45,40],[2,999,60,90,60]],
+  p:   [[0,1,20,30,20],[2,999,45,60,45]]
+};
+
+function getRango(campo, dias) {
+  var tabla = RANGOS[campo];
+  for (var i=0; i<tabla.length; i++) {
+    if (dias >= tabla[i][0] && dias <= tabla[i][1]) return tabla[i];
+  }
+  return tabla[tabla.length-1];
+}
+
+function g(id){ return parseFloat(document.getElementById(id).value)||0; }
+function fmt(n,d){ return n.toFixed(d==null?2:d); }
+
+function pill(ok,warn){
+  if(ok)   return '<span class="pill ok">OK</span>';
+  if(warn) return '<span class="pill warn">Revisar</span>';
+  return '<span class="pill bad">Fuera rango</span>';
+}
+
+function setHint(id, txt, cls){
+  var el = document.getElementById(id);
+  el.textContent = txt;
+  el.className = 'hint ' + cls;
+}
+
+// Actualiza hints de referencia con rangos del día actual
+function updateHints(){
+  var dias = g('dias');
+  var vol  = g('vol');
+  var ca   = g('ca');
+
+  var campos = ['vol','gir','aa','lip','na','k','ca','p'];
+  var vals   = {vol:vol, gir:g('gir'), aa:g('aa'), lip:g('lip'), na:g('na'), k:g('k'), ca:ca, p:g('p')};
+  var labels = {vol:'ml/kg/día', gir:'mg/kg/min', aa:'g/kg/día', lip:'g/kg/día', na:'mEq/kg/día', k:'mEq/kg/día', ca:'mg/kg/día', p:'mg/kg/día'};
+
+  campos.forEach(function(c){
+    var r = getRango(c, dias);
+    var vmin=r[2], vmax=r[3], val=vals[c];
+    var txt = vmin===vmax && vmin===0 ? 'No se indica en día '+dias : vmin+'-'+vmax+' '+labels[c];
+    var cls;
+    if(vmin===0 && vmax===0){ cls = 'warn'; }
+    else if(val>=vmin && val<=vmax){ cls = 'ok'; }
+    else if(val<vmin){ cls = 'warn'; }
+    else { cls = 'warn'; }
+
+    // Ca: también mostrar límite estabilidad
+    if(c==='ca' && vol>0){
+      var ca_max = CA_MAX_K * vol;
+      if(ca > ca_max){
+        txt = 'ASPEN: '+vmin+'–'+vmax+' · ⚠ Máx estab: '+fmt(ca_max,1);
+        cls = 'bad';
+      } else {
+        txt = 'ASPEN: '+vmin+'–'+vmax+' · Máx estab: '+fmt(ca_max,1);
+      }
+    }
+    setHint('h_'+c, txt, cls);
+  });
+}
+
+// Cuando cambia EG o días: mostrar banner de sugeridos
+function onPacienteChange(){
+  var dias = g('dias');
+  var banner = document.getElementById('day_banner');
+  var txt    = document.getElementById('day_banner_txt');
+
+  if(isNaN(dias) || document.getElementById('dias').value===''){
+    banner.className='day-banner'; return;
+  }
+
+  var periodo;
+  if(dias<=1)       periodo='Día 0–1 (inicio)';
+  else if(dias<=3)  periodo='Día 2–3 (transición)';
+  else if(dias<=6)  periodo='Día 4–6 (avance)';
+  else              periodo='Día 7+ (mantenimiento)';
+
+  var r_vol=getRango('vol',dias), r_aa=getRango('aa',dias), r_gir=getRango('gir',dias), r_lip=getRango('lip',dias);
+  var r_na=getRango('na',dias), r_k=getRango('k',dias), r_ca=getRango('ca',dias), r_p=getRango('p',dias);
+
+  txt.innerHTML = '<strong>'+periodo+'</strong> — '
+    + 'Vol: '+r_vol[2]+'–'+r_vol[3]+' · '
+    + 'AA: '+r_aa[2]+'–'+r_aa[3]+' g/kg · '
+    + 'GIR: '+r_gir[2]+'–'+r_gir[3]+' mg/kg/min · '
+    + 'Lip: '+r_lip[2]+'–'+r_lip[3]+' g/kg'
+    + (r_na[3]===0 ? ' · Sin Na/K' : ' · Na: '+r_na[2]+'–'+r_na[3]+' · K: '+r_k[2]+'–'+r_k[3]);
+
+  banner.className='day-banner on';
+  updateHints();
+}
+
+// Aplica los valores default del día actual a todos los campos
+function aplicarSugeridos(){
+  var dias = g('dias');
+  var campos = ['vol','gir','aa','lip','na','k','ca','p'];
+  campos.forEach(function(c){
+    var r = getRango(c, dias);
+    document.getElementById(c).value = r[4]; // índice 4 = default
+  });
+  updateHints();
+}
+
+function calcular(){
+  var pesoG = g('peso');
+  if(!pesoG){ alert('Ingresá el peso del paciente en gramos'); return; }
+  if(pesoG < 300 || pesoG > 5000){ alert('Verificá el peso: debe ser entre 300 y 5000 gramos'); return; }
+
+  var peso = pesoG / 1000; // convertir a kg internamente
+
+  var vol_kgd = g('vol');
+  var gir     = g('gir');
+  var aa_kgd  = g('aa');
+  var lip_kgd = g('lip');
+  var na_kgd  = g('na');
+  var k_kgd   = g('k');
+  var ca_kgd  = g('ca');
+  var p_kgd   = g('p');
+  var dias    = g('dias');
+
+  // ── VOLÚMENES ──
+  var vol_aa  = (aa_kgd  * peso) / C_AA;
+  var vol_lip = (lip_kgd * peso) / C_LIP;
+  var vol_dx  = (gir * peso * 1440 / 1000) / C_DX;
+  var vol_na  = (na_kgd  * peso) / C_NA;
+  var vol_k   = (k_kgd   * peso) / C_K;
+  var vol_ca  = (ca_kgd  * peso) / C_CA;
+  var vol_p   = (p_kgd   * peso) / C_P;
+  var vol_vit = C_VIT * peso;
+
+  var vol_necesario  = PRIMER + vol_aa + vol_lip + vol_dx + vol_na + vol_k + vol_ca + vol_p + vol_vit;
+  var vol_prescripto = vol_kgd * peso;
+  var entra          = vol_necesario <= vol_prescripto;
+
+  // ── PESO TEÓRICO MÍNIMO ──
+  // vol_necesario = PRIMER + vol_nut_por_kg * peso
+  // vol_prescripto = vol_kgd * peso
+  // Entra cuando: vol_kgd * peso >= PRIMER + vol_nut_por_kg * peso
+  // → peso >= PRIMER / (vol_kgd - vol_nut_por_kg)
+  var vol_nut_por_kg = (aa_kgd/C_AA) + (lip_kgd/C_LIP) + (gir*1440/1000/C_DX)
+                     + (na_kgd/C_NA) + (k_kgd/C_K) + (ca_kgd/C_CA) + (p_kgd/C_P) + C_VIT;
+  var diferencia_kgd = vol_kgd - vol_nut_por_kg; // ml/kg disponibles para diluir el primer
+  var peso_min_teorico; // kg
+  var peso_min_msg;
+  if(diferencia_kgd > 0){
+    peso_min_teorico = PRIMER / diferencia_kgd;
+    peso_min_msg = 'teorico';
+  } else if(diferencia_kgd === 0){
+    peso_min_teorico = null;
+    peso_min_msg = 'infinito';
+  } else {
+    peso_min_teorico = null;
+    peso_min_msg = 'imposible';
+  }
+
+  // Ca estabilidad
+  var ca_max   = CA_MAX_K * vol_kgd;
+  var ca_excede = ca_kgd > ca_max;
+
+  // ── CALORÍAS ──
+  var glu_g_kgd = gir * 1440 / 1000;
+  var kcal_glu  = glu_g_kgd * 3.4;
+  var kcal_aa   = aa_kgd    * 4.0;
+  var kcal_lip  = lip_kgd   * 9.1;
+  var kcal_tot  = kcal_glu + kcal_aa + kcal_lip;
+  var ratio     = kcal_tot>0 ? kcal_aa/kcal_tot : 0;
+  var pct_lip   = kcal_tot>0 ? kcal_lip/kcal_tot*100 : 0;
+  var carp      = p_kgd>0 ? (ca_kgd/40)/(p_kgd/31) : 0;
+
+  // ── OSMOLARIDAD ──
+  var vol_L = vol_kgd/1000;
+  var osm   = vol_L>0 ? (glu_g_kgd*6+aa_kgd*7+lip_kgd*3+ca_kgd*0.275+p_kgd*2.7+na_kgd*6.8+k_kgd*6)/vol_L : 0;
+
+  // ── MOSTRAR ──
+  document.getElementById('results').className='results on';
+
+  // Banners
+  var bOk=document.getElementById('b_vol_ok'), bBad=document.getElementById('b_vol_bad'), bCa=document.getElementById('b_ca_warn');
+  // Línea de peso teórico para el banner
+  var peso_teorico_txt = '';
+  if(peso_min_msg === 'teorico'){
+    var ptg = Math.round(peso_min_teorico * 1000); // en gramos
+    if(ptg <= 5000){
+      peso_teorico_txt = ' · Peso mínimo teórico: '+ptg+' g (con este peso y '+vol_kgd+' ml/kg el primer de 30 ml queda diluido y entraría)';
+    } else {
+      peso_teorico_txt = ' · Peso teórico mínimo: '+ptg+' g — biológicamente imposible, debe aumentarse el volumen';
+    }
+  } else if(peso_min_msg === 'imposible'){
+    peso_teorico_txt = ' · Esta formulación no entra con ningún peso a '+vol_kgd+' ml/kg (los nutrientes por kg superan el volumen). Reducir macronutrientes.';
+  } else {
+    peso_teorico_txt = ' · No entra con ningún peso a '+vol_kgd+' ml/kg. Aumentar volumen.';
+  }
+
+  if(entra){
+    bOk.className='banner ok on';
+    bBad.className='banner bad';
+    var peso_ok_txt = '';
+    if(peso_min_msg === 'teorico'){
+      peso_ok_txt = ' · Peso mínimo teórico para esta formulación: '+Math.round(peso_min_teorico*1000)+' g';
+    }
+    bOk.innerHTML='<strong>✓ Entra en el volumen prescripto</strong>'
+      +'Volumen necesario: '+fmt(vol_necesario,1)+' ml ('+fmt(vol_necesario/peso,1)+' ml/kg) · Margen libre: '+fmt(vol_prescripto-vol_necesario,1)+' ml'
+      +peso_ok_txt;
+  } else {
+    bBad.className='banner bad on';
+    bOk.className='banner ok';
+    var vol_min_kgd=Math.ceil((vol_necesario/peso)/5)*5;
+    bBad.innerHTML='<strong>✗ No entra — volumen insuficiente</strong>'
+      +'Necesario: '+fmt(vol_necesario,1)+' ml ('+fmt(vol_necesario/peso,1)+' ml/kg) · '
+      +'Prescripto: '+fmt(vol_prescripto,1)+' ml ('+vol_kgd+' ml/kg) · '
+      +'Déficit: '+fmt(vol_necesario-vol_prescripto,1)+' ml · '
+      +'Aumentar volumen a ≥'+vol_min_kgd+' ml/kg'
+      +peso_teorico_txt;
+  }
+  bCa.className = ca_excede ? 'banner warn on' : 'banner warn';
+  if(ca_excede) bCa.innerHTML='<strong>⚠ Calcio supera límite de estabilidad</strong>'
+    +fmt(ca_kgd,1)+' mg/kg/día supera el máximo de '+fmt(ca_max,1)+' mg/kg/día para '+vol_kgd+' ml/kg.';
+
+  // Osmolaridad
+  var osmCard=document.getElementById('osm_card');
+  document.getElementById('osm_val').textContent=fmt(osm,0)+' mOsm/L';
+  if(osm<900){ osmCard.className='osm-card periferica'; document.getElementById('osm_label').textContent='✓ Apta para vía periférica o central'; }
+  else if(osm<1100){ osmCard.className='osm-card central'; document.getElementById('osm_label').textContent='⚠ Solo vía central (≥900 mOsm/L)'; }
+  else { osmCard.className='osm-card alerta'; document.getElementById('osm_label').textContent='⚠ Osmolaridad muy alta — solo vía central'; }
+
+  // KPIs
+  var rK=document.getElementById('r_kcal');
+  rK.textContent=fmt(kcal_tot,1); rK.className='mv '+(kcal_tot>=90&&kcal_tot<=120?'ok':(kcal_tot>=80?'warn':'bad'));
+  var rR=document.getElementById('r_ratio');
+  rR.textContent=fmt(ratio*100,1)+'%'; rR.className='mv '+(ratio<0.15?'ok':(ratio<0.20?'warn':'bad'));
+  document.getElementById('r_ratio_s').textContent=fmt(kcal_aa,1)+' / '+fmt(kcal_tot,1)+' kcal';
+  var rL=document.getElementById('r_pctlip');
+  rL.textContent=fmt(pct_lip,1)+'%'; rL.className='mv '+(pct_lip>=25&&pct_lip<=40?'ok':(pct_lip>=20?'warn':'bad'));
+  var rC=document.getElementById('r_carp');
+  rC.textContent=fmt(carp,2)+':1'; rC.className='mv '+(carp>=1.3?'ok':(carp>=1?'warn':'bad'));
+  document.getElementById('r_kcal_glu').textContent=fmt(kcal_glu,1);
+  document.getElementById('r_kcal_aa').textContent=fmt(kcal_aa,1);
+  document.getElementById('r_kcal_lip').textContent=fmt(kcal_lip,1);
+  document.getElementById('r_gir').textContent=fmt(gir,1);
+
+  // Obtener rango del día para cada campo y marcar estado
+  function estadoCampo(campo, valor){
+    var r=getRango(campo, dias);
+    if(r[2]===0&&r[3]===0) return valor===0; // si no se indica, ok si es 0
+    return valor>=r[2]&&valor<=r[3];
+  }
+  function warnCampo(campo, valor){
+    var r=getRango(campo, dias);
+    return valor<r[2];
+  }
+
+  // Tabla
+  var rows=[
+    {nom:'Primer (agua dest.)',sol:'Agua destilada — fijo',dosis:'30 ml fijo',vol:PRIMER,ok:true,warn:false},
+    {nom:'Aminoácidos',sol:'AA 20%',dosis:fmt(aa_kgd,1)+' g/kg → '+fmt(aa_kgd*peso,2)+' g/día',vol:vol_aa,ok:estadoCampo('aa',aa_kgd),warn:warnCampo('aa',aa_kgd)},
+    {nom:'Lípidos',sol:'Lípidos 10%',dosis:fmt(lip_kgd,1)+' g/kg → '+fmt(lip_kgd*peso,2)+' g/día',vol:vol_lip,ok:estadoCampo('lip',lip_kgd),warn:warnCampo('lip',lip_kgd)},
+    {nom:'Dextrosa 50%',sol:'Dx 50%',dosis:'GIR '+fmt(gir,1)+' mg/kg/min → '+fmt(glu_g_kgd,3)+' g/kg/día',vol:vol_dx,ok:estadoCampo('gir',gir),warn:warnCampo('gir',gir)},
+    {nom:'Sodio',sol:'NaCl 20% (3.4 mEq/ml)',dosis:fmt(na_kgd,1)+' mEq/kg → '+fmt(na_kgd*peso,2)+' mEq/día',vol:vol_na,ok:estadoCampo('na',na_kgd),warn:warnCampo('na',na_kgd)},
+    {nom:'Potasio',sol:'KCl (3 mEq/ml)',dosis:fmt(k_kgd,1)+' mEq/kg → '+fmt(k_kgd*peso,2)+' mEq/día',vol:vol_k,ok:estadoCampo('k',k_kgd),warn:warnCampo('k',k_kgd)},
+    {nom:'Calcio',sol:'Gluconato Ca (9.2 mg/ml)',dosis:fmt(ca_kgd,0)+' mg/kg → '+fmt(ca_kgd*peso,1)+' mg/día',vol:vol_ca,ok:estadoCampo('ca',ca_kgd)&&!ca_excede,warn:ca_excede},
+    {nom:'Fósforo',sol:'Phocytan (93 mg/ml)',dosis:fmt(p_kgd,0)+' mg/kg → '+fmt(p_kgd*peso,1)+' mg/día',vol:vol_p,ok:estadoCampo('p',p_kgd),warn:warnCampo('p',p_kgd)},
+    {nom:'Vit/Oligoelementos',sol:'3.45 ml/kg',dosis:fmt(C_VIT,2)+' ml/kg → '+fmt(vol_vit,2)+' ml/día',vol:vol_vit,ok:true,warn:false},
+  ];
+  var html='';
+  rows.forEach(function(r){
+    html+='<tr><td class="lc">'+r.nom+'</td><td>'+r.sol+'</td><td>'+r.dosis+'</td><td><strong>'+fmt(r.vol,2)+'</strong></td><td>'+pill(r.ok,r.warn)+'</td></tr>';
+  });
+  html+='<tr class="tfoot"><td class="lc" colspan="3">TOTAL NECESARIO</td><td><strong>'+fmt(vol_necesario,2)+' ml</strong></td><td>'+pill(entra,false)+' '+fmt(vol_necesario/peso,1)+' ml/kg</td></tr>';
+  document.getElementById('tbody').innerHTML=html;
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Listeners
+document.querySelectorAll('input').forEach(function(i){
+  i.addEventListener('keydown',function(e){if(e.key==='Enter')calcular();});
+});
+window.addEventListener('DOMContentLoaded', function(){
+  updateHints();
+});
+</script>
+</body>
+</html>
