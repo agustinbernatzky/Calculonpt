@@ -110,16 +110,16 @@ tr.tfoot td{background:var(--card2);font-weight:600;border-top:1.5px solid var(-
   <div class="g3">
     <div class="field">
       <label>Peso actual <em>gramos</em></label>
-      <input type="number" id="peso" step="1" min="300" max="5000" placeholder="ej: 1950" inputmode="numeric" oninput="onPacienteChange()">
+      <input type="number" id="peso" step="1" min="300" max="5000" placeholder="ej: 1950" inputmode="decimal" oninput="onPacienteChange()">
       <span class="hint muted">Ingresar en gramos</span>
     </div>
     <div class="field">
       <label>EG nacimiento <em>sem</em></label>
-      <input type="number" id="eg" step="1" min="22" max="36" placeholder="28" inputmode="numeric" oninput="onPacienteChange()">
+      <input type="number" id="eg" step="1" min="22" max="36" placeholder="28" inputmode="decimal" oninput="onPacienteChange()">
     </div>
     <div class="field">
       <label>Días de vida <em>días</em></label>
-      <input type="number" id="dias" step="1" min="0" max="120" placeholder="0" inputmode="numeric" oninput="onPacienteChange()">
+      <input type="number" id="dias" step="1" min="0" max="120" placeholder="0" inputmode="decimal" oninput="onPacienteChange()">
     </div>
   </div>
 </div>
@@ -134,7 +134,7 @@ tr.tfoot td{background:var(--card2);font-weight:600;border-top:1.5px solid var(-
   <div class="g2">
     <div class="field">
       <label>Volumen total <em>ml/kg/día</em></label>
-      <input type="number" id="vol" step="5" min="40" max="200" value="120" inputmode="numeric" oninput="updateHints()">
+      <input type="number" id="vol" step="5" min="40" max="200" value="120" inputmode="decimal" oninput="updateHints()">
       <span class="hint ref" id="h_vol">100–150 ml/kg/día</span>
     </div>
     <div class="field">
@@ -164,12 +164,12 @@ tr.tfoot td{background:var(--card2);font-weight:600;border-top:1.5px solid var(-
     </div>
     <div class="field">
       <label>Calcio <em>mg/kg/día</em></label>
-      <input type="number" id="ca" step="5" min="0" max="120" value="60" inputmode="numeric" oninput="updateHints()">
+      <input type="number" id="ca" step="5" min="0" max="120" value="60" inputmode="decimal" oninput="updateHints()">
       <span class="hint ref" id="h_ca">ASPEN: 60–90 mg/kg/día</span>
     </div>
     <div class="field">
       <label>Fósforo <em>mg/kg/día</em></label>
-      <input type="number" id="p" step="5" min="0" max="100" value="45" inputmode="numeric" oninput="updateHints()">
+      <input type="number" id="p" step="5" min="0" max="100" value="45" inputmode="decimal" oninput="updateHints()">
       <span class="hint ref" id="h_p">ASPEN: 45–60 mg/kg/día</span>
     </div>
   </div>
